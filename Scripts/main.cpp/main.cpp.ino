@@ -84,7 +84,7 @@ void stop() {
 
 // Test any kind of movement function for a specified time **NOT TESTED
 // In theory, takes two parameters: a pointer to a function (e.g. to goForward()), and an amount of time in milliseconds, then performs that movement for the time given
-void testMovement(void (*move), int time) {
+void testMovement(void (*move)(), int time) {
   move();
   delay(time);
   stop();
