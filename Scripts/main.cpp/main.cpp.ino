@@ -74,6 +74,92 @@ void goBackward() {
   analogWrite(rightBack_enB, 255);
 }
 
+// Left front and right back wheels move forward, right front and left back wheels move backward
+void goRight() {
+  digitalWrite(leftFront_in4, LOW);
+  digitalWrite(leftFront_in3, HIGH);
+  digitalWrite(rightFront_in1, HIGH);
+  digitalWrite(rightFront_in2, LOW);
+  digitalWrite(leftBack_in1, HIGH);
+  digitalWrite(leftBack_in2, LOW);
+  digitalWrite(rightBack_in4, LOW);
+  digitalWrite(rightBack_in3, HIGH);
+
+  analogWrite(leftFront_enB, 255);
+  analogWrite(rightFront_enA, 255);
+  analogWrite(leftBack_enA, 255);
+  analogWrite(rightBack_enB, 255);
+}
+
+// Right front and left back wheels move forward, left front and right back wheels move backward **NOT TESTED
+void goLeft() {
+  digitalWrite(leftFront_in4, HIGH);
+  digitalWrite(leftFront_in3, LOW);
+  digitalWrite(rightFront_in1, LOW);
+  digitalWrite(rightFront_in2, HIGH);
+  digitalWrite(leftBack_in1, LOW);
+  digitalWrite(leftBack_in2, HIGH);
+  digitalWrite(rightBack_in4, HIGH);
+  digitalWrite(rightBack_in3, LOW);
+
+  analogWrite(leftFront_enB, 255);
+  analogWrite(rightFront_enA, 255);
+  analogWrite(leftBack_enA, 255);
+  analogWrite(rightBack_enB, 255);
+}
+
+// Right front and left back wheels move forward **NOT TESTED
+void goForwardRight() {
+  digitalWrite(rightFront_in1, LOW);
+  digitalWrite(rightFront_in2, HIGH);
+  digitalWrite(leftBack_in1, LOW);
+  digitalWrite(leftBack_in2, HIGH);
+
+  analogWrite(leftFront_enB, 0);
+  analogWrite(rightFront_enA, 255);
+  analogWrite(leftBack_enA, 255);
+  analogWrite(rightBack_enB, 0);
+}
+
+// Left front and right back wheels move forward **NOT TESTED
+void goForwardLeft() {
+  digitalWrite(leftFront_in4, LOW);
+  digitalWrite(leftFront_in3, HIGH);
+  digitalWrite(rightBack_in4, LOW);
+  digitalWrite(rightBack_in3, HIGH);
+
+  analogWrite(leftFront_enB, 255);
+  analogWrite(rightFront_enA, 0);
+  analogWrite(leftBack_enA, 0);
+  analogWrite(rightBack_enB, 255);
+}
+
+// Left front and right back wheels move backward **NOT TESTED
+void goBackwardRight() {
+  digitalWrite(leftFront_in4, HIGH);
+  digitalWrite(leftFront_in3, LOW);
+  digitalWrite(rightBack_in4, HIGH);
+  digitalWrite(rightBack_in3, LOW);
+
+  analogWrite(leftFront_enB, 255);
+  analogWrite(rightFront_enA, 0);
+  analogWrite(leftBack_enA, 0);
+  analogWrite(rightBack_enB, 255);
+}
+
+// Right front and left back wheels move backward **NOT TESTED
+void goBackwardLeft() {
+  digitalWrite(rightFront_in1, HIGH);
+  digitalWrite(rightFront_in2, LOW);
+  digitalWrite(leftBack_in1, HIGH);
+  digitalWrite(leftBack_in2, LOW);
+
+  analogWrite(leftFront_enB, 0);
+  analogWrite(rightFront_enA, 255);
+  analogWrite(leftBack_enA, 255);
+  analogWrite(rightBack_enB, 0);
+}
+
 // Set all voltages to zero, stopping the rover **NOT TESTED
 void stop() {
   analogWrite(leftFront_enB, 0);
