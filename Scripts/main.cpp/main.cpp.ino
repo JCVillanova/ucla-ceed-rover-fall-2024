@@ -1,3 +1,6 @@
+#include <NewPing.h>
+#include <Wire.h>
+
 // Define wiring pins for Motor 1
 #define leftFront_enB 11
 #define leftFront_in4 2
@@ -14,8 +17,30 @@
 #define rightBack_in4 9
 #define rightBack_in3 8
 
+// Ultrasonic sensor
+#define sonar1 22
+#define sonar2 23
+#define sonar3 24
+#define sonar4 25
+#define sonar5 26
+#define sonar6 27
+#define MAX_DISTANCE 200
+#define NUM_SONAR 6
+
+NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
+  NewPing(sonar1, sonar1, MAX_DISTANCE),
+  NewPing(sonar2, sonar2, MAX_DISTANCE),
+  NewPing(sonar3, sonar3, MAX_DISTANCE),
+  NewPing(sonar4, sonar4, MAX_DISTANCE),
+  NewPing(sonar5, sonar5, MAX_DISTANCE),
+  NewPing(sonar6, sonar6, MAX_DISTANCE)
+};
+
 // setup() method is called once when the program begins
 void setup() {
+  // Serial port begin
+  Serial.begin(9600);
+
   // Configure Motor 1 pins as outputs
   pinMode(leftFront_enB, OUTPUT);
   pinMode(leftFront_in4, OUTPUT);
