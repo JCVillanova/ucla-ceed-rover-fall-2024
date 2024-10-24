@@ -185,40 +185,6 @@ void goBackwardLeft() {
   analogWrite(rightBack_enB, 0);
 }
 
-// Turns right about its center, left wheels move forward, right wheels move backward **NOT TESTED
-void turnRight() {
-  digitalWrite(leftFront_in4, LOW);
-  digitalWrite(leftFront_in3, HIGH);
-  digitalWrite(rightFront_in1, HIGH);
-  digitalWrite(rightFront_in2, HIGH);
-  digitalWrite(leftBack_in1, LOW);
-  digitalWrite(leftBack_in2, LOW);
-  digitalWrite(rightBack_in4, HIGH);
-  digitalWrite(rightBack_in3, LOW);
-
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
-}
-
-// Turns left about its center, left wheels move backward, right wheels move forward **NOT TESTED
-void turnLeft() {
-  digitalWrite(leftFront_in4, HIGH);
-  digitalWrite(leftFront_in3, LOW);
-  digitalWrite(rightFront_in1, LOW);
-  digitalWrite(rightFront_in2, HIGH);
-  digitalWrite(leftBack_in1, HIGH);
-  digitalWrite(leftBack_in2, LOW);
-  digitalWrite(rightBack_in4, LOW);
-  digitalWrite(rightBack_in3, HIGH);
-
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
-}
-
 // Set all voltages to zero, stopping the rover **NOT TESTED
 void stop() {
   analogWrite(leftFront_enB, 0);
