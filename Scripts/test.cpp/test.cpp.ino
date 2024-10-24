@@ -1,3 +1,5 @@
+#include <NewPing.h>
+
 // Define wiring pins for Motor 1
 #define leftFront_enB 2
 #define leftFront_in4 3
