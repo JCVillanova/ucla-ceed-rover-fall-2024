@@ -2,20 +2,20 @@
 #include <Wire.h>
 
 // Define wiring pins for Motor 1
-#define leftFront_enB 11
-#define leftFront_in4 2
-#define leftFront_in3 3
-#define leftBack_enA 13
-#define leftBack_in1 5
-#define leftBack_in2 4
+#define leftFront_enB 2
+#define leftFront_in4 3
+#define leftFront_in3 4
+#define leftBack_enA 5
+#define leftBack_in1 6
+#define leftBack_in2 7
 
 // Define wiring pins for Motor 2
-#define rightFront_enA 12
-#define rightFront_in1 6
-#define rightFront_in2 7
-#define rightBack_enB 10
-#define rightBack_in4 9
-#define rightBack_in3 8
+#define rightFront_enA 8
+#define rightFront_in1 9
+#define rightFront_in2 10
+#define rightBack_enB 11
+#define rightBack_in4 12
+#define rightBack_in3 13
 
 // Ultrasonic sensor
 #define sonar1 22
@@ -35,6 +35,8 @@ NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
   NewPing(sonar5, sonar5, MAX_DISTANCE),
   NewPing(sonar6, sonar6, MAX_DISTANCE)
 };
+
+int distance[NUM_SONAR]; // distance array for each sensor
 
 // setup() method is called once when the program begins
 void setup() {
@@ -60,7 +62,23 @@ void setup() {
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  // Do stuff here
+  delay(1000);
+
+  updateSonar();
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    Serial.print("Sonar ");
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.println(distance[i]);
+  }
+}
+
+// Update distance array for all sensors
+void updateSonar() {
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    distance[i] = sonar[i].ping_in();
+    if(distance[i] == 0) distance[i] = MAX_DISTANCE;
+  }
 }
 
 // All four wheels move forward

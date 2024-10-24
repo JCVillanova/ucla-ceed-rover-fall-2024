@@ -1,18 +1,18 @@
 // Define wiring pins for Motor 1
-#define leftFront_enB 11
-#define leftFront_in4 2
-#define leftFront_in3 3
-#define leftBack_enA 13
-#define leftBack_in1 5
-#define leftBack_in2 4
+#define leftFront_enB 2
+#define leftFront_in4 3
+#define leftFront_in3 4
+#define leftBack_enA 5
+#define leftBack_in1 6
+#define leftBack_in2 7
 
 // Define wiring pins for Motor 2
-#define rightFront_enA 12
-#define rightFront_in1 6
-#define rightFront_in2 7
-#define rightBack_enB 10
-#define rightBack_in4 9
-#define rightBack_in3 8
+#define rightFront_enA 8
+#define rightFront_in1 9
+#define rightFront_in2 10
+#define rightBack_enB 11
+#define rightBack_in4 12
+#define rightBack_in3 13
 
 // setup() method is called once when the program begins
 void setup() {
@@ -35,7 +35,7 @@ void setup() {
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  testMovement(&goBackwardLeft, 4000);
+  testMovement(&goForward, 4000);
 }
 
 // Right front and left back wheels move backward **NOT TESTED
