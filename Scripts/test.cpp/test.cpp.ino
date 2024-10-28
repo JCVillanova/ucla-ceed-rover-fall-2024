@@ -1,5 +1,4 @@
 #include <NewPing.h>
-#include <Wire.h>
 
 // Define wiring pins for Motor 1
 #define leftFront_enB 2
@@ -40,9 +39,6 @@ int distance[NUM_SONAR]; // distance array for each sensor
 
 // setup() method is called once when the program begins
 void setup() {
-  // Serial port begin
-  Serial.begin(9600);
-
   // Configure Motor 1 pins as outputs
   pinMode(leftFront_enB, OUTPUT);
   pinMode(leftFront_in4, OUTPUT);
@@ -62,15 +58,7 @@ void setup() {
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  delay(1000);
-
-  updateSonar();
-  for(int i = 0; i < NUM_SONAR; ++i) {
-    Serial.print("Sonar ");
-    Serial.print(i + 1);
-    Serial.print(": ");
-    Serial.println(distance[i]);
-  }
+  testMovement(&goForward, 4000);
 }
 
 // Update distance array for all sensors
