@@ -1,6 +1,10 @@
 #include <NewPing.h>
 #include <Wire.h>
 
+int speed = 255;
+double temp[6];
+void (*mode)();
+
 // Define wiring pins for Motor 1
 #define leftFront_enB 2
 #define leftFront_in4 3
@@ -18,13 +22,13 @@
 #define rightBack_in3 13
 
 // Ultrasonic sensor
-#define sonar1 22
-#define sonar2 23
-#define sonar3 24
-#define sonar4 25
-#define sonar5 26
-#define sonar6 27
-#define MAX_DISTANCE 200
+#define sonar1 25 // front left
+#define sonar2 26 // front right
+#define sonar3 24 // left
+#define sonar4 23 // right
+#define sonar5 22 // back
+#define sonar6 27 // for claw
+#define MAX_DISTANCE 400
 #define NUM_SONAR 6
 
 NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
@@ -58,13 +62,45 @@ void setup() {
   pinMode(rightBack_enB, OUTPUT);
   pinMode(rightBack_in4, OUTPUT);
   pinMode(rightBack_in3, OUTPUT);
+
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    distance[i] = sonar[i].ping_cm(); // update sensor reading if difference isn't drastic
+    temp[i] = sonar[i].ping_cm();
+  }
+
+  switchMode(&goForward);
 }
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  delay(1000);
-
+  delay(20);
   updateSonar();
+
+  if((mode == &goForward && frontDistance() <= 25) || (mode == &goBackward && distance[4] <= 25)) {
+    if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
+    else if(distance[3] >= 25) goRight();
+    else if(mode == &goForward) switchMode(&goBackward);
+    else switchMode(&goForward);
+  } else if (mode == &goBackward && frontDistance() >= 100) switchMode(&goForward);
+  else mode();
+}
+
+void switchMode(void (*direction)()) {
+  mode = direction;
+}
+
+// Update distance array for all sensors
+void updateSonar() {
+  double ping;
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    ping = sonar[i].ping_cm(); // store ping value
+    if((ping - distance[i] < 30) || /**/) distance[i] = ping; // update sensor reading if difference isn't drastic
+    else temp[i] = ping; // if difference is drastic set ping to temp and don't update reading (yet)
+    //if(distance[i] == 0) distance[i] = MAX_DISTANCE;
+  }
+}
+
+void printDistances() {
   for(int i = 0; i < NUM_SONAR; ++i) {
     Serial.print("Sonar ");
     Serial.print(i + 1);
@@ -73,12 +109,24 @@ void loop() {
   }
 }
 
-// Update distance array for all sensors
-void updateSonar() {
-  for(int i = 0; i < NUM_SONAR; ++i) {
-    distance[i] = sonar[i].ping_in();
-    if(distance[i] == 0) distance[i] = MAX_DISTANCE;
-  }
+bool obstacleTooCloseFront() {
+  if(distance[0] <= 25 || distance[1] <= 25) return true;
+  return false;
+}
+
+double frontDistance() {
+  if(distance[0] < distance[1]) return distance[0];
+  else return distance[1];
+}
+
+bool obstacleTooCloseLeft() {
+  if(distance[2] <= 50) return true;
+  return false;
+}
+
+bool obstacleTooCloseRight() {
+  if(distance[3] <= 50) return true;
+  return false;
 }
 
 // All four wheels move forward
@@ -94,10 +142,10 @@ void goForward() {
   digitalWrite(rightBack_in3, HIGH);
 
   // Apply voltage to pins at previously specified voltages
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // All four wheels move backward
@@ -111,10 +159,10 @@ void goBackward() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Left front and right back wheels move forward, right front and left back wheels move backward
@@ -128,10 +176,10 @@ void goRight() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 0.5*speed);
+  analogWrite(rightFront_enA, 0.5*speed);
+  analogWrite(leftBack_enA, 0.5*speed);
+  analogWrite(rightBack_enB, 0.5*speed);
 }
 
 // Right front and left back wheels move forward, left front and right back wheels move backward **NOT TESTED
@@ -145,10 +193,10 @@ void goLeft() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 0.5*speed);
+  analogWrite(rightFront_enA, 0.5*speed);
+  analogWrite(leftBack_enA, 0.5*speed);
+  analogWrite(rightBack_enB, 0.5*speed);
 }
 
 // Right front and left back wheels move forward **NOT TESTED
@@ -159,8 +207,8 @@ void goForwardRight() {
   digitalWrite(leftBack_in2, HIGH);
 
   analogWrite(leftFront_enB, 0);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
   analogWrite(rightBack_enB, 0);
 }
 
@@ -171,10 +219,10 @@ void goForwardLeft() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 255);
+  analogWrite(leftFront_enB, speed);
   analogWrite(rightFront_enA, 0);
   analogWrite(leftBack_enA, 0);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Left front and right back wheels move backward **NOT TESTED
@@ -184,10 +232,10 @@ void goBackwardRight() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
+  analogWrite(leftFront_enB, speed);
   analogWrite(rightFront_enA, 0);
   analogWrite(leftBack_enA, 0);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Right front and left back wheels move backward **NOT TESTED
@@ -198,8 +246,8 @@ void goBackwardLeft() {
   digitalWrite(leftBack_in2, LOW);
 
   analogWrite(leftFront_enB, 0);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
   analogWrite(rightBack_enB, 0);
 }
 

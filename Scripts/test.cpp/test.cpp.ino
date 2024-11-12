@@ -58,15 +58,44 @@ void setup() {
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  testMovement(&goForward, 4000);
+  delay(5000);
+  testMovement(&goForward, 2000);
+  delay(2000);
+  testMovement(&goLeft, 2000);
+  delay(2000);
+  testMovement(&goBackward, 2000);
+  delay(2000);
+  testMovement(&goRight, 2000);
+  delay(2000);
+  testMovement(&goForwardLeft, 2000);
+  delay(2000);
+  testMovement(&goBackwardRight, 2000);
+  delay(2000);
+  testMovement(&goForwardRight, 2000);
+  delay(2000);
+  testMovement(&goBackwardLeft, 2000);
 }
 
 // Update distance array for all sensors
 void updateSonar() {
   for(int i = 0; i < NUM_SONAR; ++i) {
-    distance[i] = sonar[i].ping_in();
+    distance[i] = sonar[i].ping_cm();
     if(distance[i] == 0) distance[i] = MAX_DISTANCE;
   }
+}
+
+void printDistances() {
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    Serial.print("Sonar ");
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.println(distance[i]);
+  }
+}
+
+bool obstacleTooCloseFront() {
+  if(distance[0] <= 45 || distance[1] <= 45) return true;
+  return false;
 }
 
 // All four wheels move forward
@@ -82,10 +111,10 @@ void goForward() {
   digitalWrite(rightBack_in3, HIGH);
 
   // Apply voltage to pins at previously specified voltages
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 150);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
+  analogWrite(rightBack_enB, 150);
 }
 
 // All four wheels move backward
@@ -99,10 +128,10 @@ void goBackward() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 150);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
+  analogWrite(rightBack_enB, 150);
 }
 
 // Left front and right back wheels move forward, right front and left back wheels move backward
@@ -116,10 +145,10 @@ void goRight() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 150);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
+  analogWrite(rightBack_enB, 150);
 }
 
 // Right front and left back wheels move forward, left front and right back wheels move backward **NOT TESTED
@@ -133,10 +162,10 @@ void goLeft() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(leftFront_enB, 150);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
+  analogWrite(rightBack_enB, 150);
 }
 
 // Right front and left back wheels move forward **NOT TESTED
@@ -147,8 +176,8 @@ void goForwardRight() {
   digitalWrite(leftBack_in2, HIGH);
 
   analogWrite(leftFront_enB, 0);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
   analogWrite(rightBack_enB, 0);
 }
 
@@ -159,10 +188,10 @@ void goForwardLeft() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 255);
+  analogWrite(leftFront_enB, 150);
   analogWrite(rightFront_enA, 0);
   analogWrite(leftBack_enA, 0);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(rightBack_enB, 150);
 }
 
 // Left front and right back wheels move backward **NOT TESTED
@@ -172,10 +201,10 @@ void goBackwardRight() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 255);
+  analogWrite(leftFront_enB, 150);
   analogWrite(rightFront_enA, 0);
   analogWrite(leftBack_enA, 0);
-  analogWrite(rightBack_enB, 255);
+  analogWrite(rightBack_enB, 150);
 }
 
 // Right front and left back wheels move backward **NOT TESTED
@@ -186,8 +215,8 @@ void goBackwardLeft() {
   digitalWrite(leftBack_in2, LOW);
 
   analogWrite(leftFront_enB, 0);
-  analogWrite(rightFront_enA, 255);
-  analogWrite(leftBack_enA, 255);
+  analogWrite(rightFront_enA, 150);
+  analogWrite(leftBack_enA, 150);
   analogWrite(rightBack_enB, 0);
 }
 
