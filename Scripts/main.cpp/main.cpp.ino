@@ -1,9 +1,12 @@
 #include <NewPing.h>
 #include <Wire.h>
 
+const int SENSOR_AVERAGE_RANGE = 4;
+
 int speed = 255;
-double temp[6];
-void (*mode)();
+bool sensorsSetUp = false;
+double sensorData[6][SENSOR_AVERAGE_RANGE]; // 2D array to store sensor data values for each of 6 sensors
+void (*mode)(); // function pointer to forward or backward movement based on environment rover detects
 
 // Define wiring pins for Motor 1
 #define leftFront_enB 2
@@ -63,20 +66,30 @@ void setup() {
   pinMode(rightBack_in4, OUTPUT);
   pinMode(rightBack_in3, OUTPUT);
 
-  for(int i = 0; i < NUM_SONAR; ++i) {
-    distance[i] = sonar[i].ping_cm(); // update sensor reading if difference isn't drastic
-    temp[i] = sonar[i].ping_cm();
-  }
-
   switchMode(&goForward);
 }
 
 // loop() method is called repeatedly as long as the program is running
 void loop() {
-  delay(20);
-  updateSonar();
+  if(!sensorsSetUp) {
+    for(int i = 0; i < SENSOR_AVERAGE_RANGE; ++i) {
+      delay(40);
+      updateSonar(sensorData, i);
+    }
 
-  if((mode == &goForward && frontDistance() <= 25) || (mode == &goBackward && distance[4] <= 25)) {
+    for(int i = 0; i < NUM_SONAR; ++i) {
+      for(int j = 0; j < SENSOR_AVERAGE_RANGE; ++j) {
+        distance[i] += sensorData[i][j];
+      }
+      distance[i] /= SENSOR_AVERAGE_RANGE;
+    }
+    sensorsSetUp = true;
+  }
+
+  delay(40);
+  updateSonar(sensorData);
+
+  if((mode == &goForward && frontDistance() <= 30) || (mode == &goBackward && distance[4] <= 30)) {
     if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
     else if(distance[3] >= 25) goRight();
     else if(mode == &goForward) switchMode(&goBackward);
@@ -90,13 +103,32 @@ void switchMode(void (*direction)()) {
 }
 
 // Update distance array for all sensors
-void updateSonar() {
+void updateSonar(double sensorData[][SENSOR_AVERAGE_RANGE]) {
   double ping;
+  double sum[6] = {0, 0, 0, 0, 0, 0};
   for(int i = 0; i < NUM_SONAR; ++i) {
     ping = sonar[i].ping_cm(); // store ping value
-    if((ping - distance[i] < 30) || /**/) distance[i] = ping; // update sensor reading if difference isn't drastic
-    else temp[i] = ping; // if difference is drastic set ping to temp and don't update reading (yet)
+
+    // Shift all values left in the array, deleting the oldest value to make room for new value
+    for(int j = 0; j < SENSOR_AVERAGE_RANGE - 1; ++j) {
+      sensorData[i][j] = sensorData[i][j+1];
+    }
+    sensorData[i][SENSOR_AVERAGE_RANGE-1] = ping;
+
+    // Add up 16 past values and average them out
+    for(int k = 0; k < SENSOR_AVERAGE_RANGE; ++k) {
+      sum[i] += sensorData[i][k];
+    }
+    sum[i] /= SENSOR_AVERAGE_RANGE;
+    distance[i] = sum[i];
+
     //if(distance[i] == 0) distance[i] = MAX_DISTANCE;
+  }
+}
+
+void updateSonar(double sensorData[][SENSOR_AVERAGE_RANGE], int index) {
+  for(int i = 0; i < NUM_SONAR; ++i) {
+    sensorData[i][index] = sonar[i].ping_cm();
   }
 }
 
