@@ -89,7 +89,7 @@ void loop() {
   delay(40);
   updateSonar(sensorData);
 
-  if((mode == &goForward && frontDistance() <= 30) || (mode == &goBackward && distance[4] <= 30)) {
+  if((mode == &goForward && frontDistance() <= 40) || (mode == &goBackward && distance[4] <= 40)) {
     if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
     else if(distance[3] >= 25) goRight();
     else if(mode == &goForward) switchMode(&goBackward);
@@ -191,10 +191,10 @@ void goBackward() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, speed);
-  analogWrite(rightFront_enA, speed);
-  analogWrite(leftBack_enA, speed);
-  analogWrite(rightBack_enB, speed);
+  analogWrite(leftFront_enB, 0.5*speed);
+  analogWrite(rightFront_enA, 0.5*speed);
+  analogWrite(leftBack_enA, 0.5*speed);
+  analogWrite(rightBack_enB, 0.5*speed);
 }
 
 // Left front and right back wheels move forward, right front and left back wheels move backward
