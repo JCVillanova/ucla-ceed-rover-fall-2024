@@ -9,6 +9,8 @@ const int SENSOR_AVERAGE_RANGE = 4;
 
 int speed = 255;
 bool sensorsSetUp = false;
+bool inSearchArea = false;
+bool objectPickedUp = false;
 double sensorData[6][SENSOR_AVERAGE_RANGE]; // 2D array to store sensor data values for each of 6 sensors
 void (*mode)(); // function pointer to forward or backward movement based on environment rover detects
 
@@ -39,7 +41,7 @@ void (*mode)(); // function pointer to forward or backward movement based on env
 #define NUM_SONAR 6
 
 // Servo motor
-#define servoPWM 40
+#define servoPWM 15
 Servo myServo;
 
 NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
@@ -110,26 +112,56 @@ void loop() {
   }
 
   mpu.update();
-  Serial.print("Z : ");
-  Serial.println(mpu.getAngleZ());
+  /*Serial.print("Z : ");
+  Serial.println(mpu.getAngleZ());*/
 
-  myServo.write(0);
+  /*myServo.write(0);
   delay(300);
   myServo.write(180);
   delay(300);
   myServo.detach();
-  myServo.attach(servoPWM);
+  myServo.attach(servoPWM);*/
 
   delay(40);
   updateSonar(sensorData);
 
-  if((mode == &goForward && frontDistance() <= 40) || (mode == &goBackward && distance[4] <= 40)) {
-    if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
-    else if(distance[3] >= 25) goRight();
-    else if(mode == &goForward) switchMode(&goBackward);
-    else switchMode(&goForward);
-  } else if (mode == &goBackward && frontDistance() >= 100) switchMode(&goForward);
-  else mode();
+  if(distance[3] + distance[4] > 120) inSearchArea = true;
+
+  if(inSearchArea && !objectPickedUp) {
+    while(distance[6] > 165) {
+      rotateLeft();
+    }
+    if(distance[6] >= 30) {
+      goBackward();
+    }
+    myServo.write(0);
+    delay(500);
+    myServo.detach();
+    myServo.attach(servoPWM);
+    objectPickedUp = true;
+  } else if(inSearchArea && objectPickedUp) {
+    while(mpu.getAngleZ() - 90 < 5 || mpu.getAngleZ() - 90 > -5) {
+      rotateLeft();
+      mpu.update();
+    }
+    if(distance[5] > 75) {
+      goBackward();
+    } else {
+      myServo.write(180);
+      delay(500);
+      myServo.detach();
+      myServo.attach(servoPWM);
+      while(1);
+    }
+  } else {
+      if((mode == &goForward && frontDistance() <= 40) || (mode == &goBackward && distance[4] <= 40)) {
+        if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
+        else if(distance[3] >= 25) goRight();
+        else if(mode == &goForward) switchMode(&goBackward);
+        else switchMode(&goForward);
+      } else if (mode == &goBackward && frontDistance() >= 100) switchMode(&goForward);
+      else mode();
+  }
 }
 
 void switchMode(void (*direction)()) {
@@ -248,7 +280,7 @@ void goRight() {
   analogWrite(rightBack_enB, 0.5*speed);
 }
 
-// Right front and left back wheels move forward, left front and right back wheels move backward **NOT TESTED
+// Right front and left back wheels move forward, left front and right back wheels move backward
 void goLeft() {
   digitalWrite(leftFront_in4, HIGH);
   digitalWrite(leftFront_in3, LOW);
@@ -265,7 +297,24 @@ void goLeft() {
   analogWrite(rightBack_enB, 0.5*speed);
 }
 
-// Right front and left back wheels move forward **NOT TESTED
+// Rotates the rover to the left
+void rotateLeft() {
+  digitalWrite(leftFront_in4, HIGH);
+  digitalWrite(leftFront_in3, LOW);
+  digitalWrite(rightFront_in1, LOW);
+  digitalWrite(rightFront_in2, HIGH);
+  digitalWrite(leftBack_in1, HIGH);
+  digitalWrite(leftBack_in2, LOW);
+  digitalWrite(rightBack_in4, LOW);
+  digitalWrite(rightBack_in3, HIGH);
+
+  analogWrite(leftFront_enB, 0.5*speed);
+  analogWrite(rightFront_enA, 0.5*speed);
+  analogWrite(leftBack_enA, 0.5*speed);
+  analogWrite(rightBack_enB, 0.5*speed);
+}
+
+// Right front and left back wheels move forward 
 void goForwardRight() {
   digitalWrite(rightFront_in1, LOW);
   digitalWrite(rightFront_in2, HIGH);
@@ -278,7 +327,7 @@ void goForwardRight() {
   analogWrite(rightBack_enB, 0);
 }
 
-// Left front and right back wheels move forward **NOT TESTED
+// Left front and right back wheels move forward 
 void goForwardLeft() {
   digitalWrite(leftFront_in4, LOW);
   digitalWrite(leftFront_in3, HIGH);
@@ -291,7 +340,7 @@ void goForwardLeft() {
   analogWrite(rightBack_enB, speed);
 }
 
-// Left front and right back wheels move backward **NOT TESTED
+// Left front and right back wheels move backward 
 void goBackwardRight() {
   digitalWrite(leftFront_in4, HIGH);
   digitalWrite(leftFront_in3, LOW);
@@ -304,7 +353,7 @@ void goBackwardRight() {
   analogWrite(rightBack_enB, speed);
 }
 
-// Right front and left back wheels move backward **NOT TESTED
+// Right front and left back wheels move backward 
 void goBackwardLeft() {
   digitalWrite(rightFront_in1, HIGH);
   digitalWrite(rightFront_in2, LOW);
@@ -317,7 +366,7 @@ void goBackwardLeft() {
   analogWrite(rightBack_enB, 0);
 }
 
-// Set all voltages to zero, stopping the rover **NOT TESTED
+// Set all voltages to zero, stopping the rover 
 void stop() {
   analogWrite(leftFront_enB, 0);
   analogWrite(rightFront_enA, 0);
@@ -325,8 +374,8 @@ void stop() {
   analogWrite(rightBack_enB, 0);
 }
 
-// Test any kind of movement function for a specified time **NOT TESTED
-// In theory, takes two parameters: a pointer to a function (e.g. to goForward()), and an amount of time in milliseconds, then performs that movement for the time given
+// Test any kind of movement function for a specified time 
+// Takes two parameters: a pointer to a function (e.g. to goForward()), and an amount of time in milliseconds, then performs that movement for the time given
 void testMovement(void (*move)(), int time) {
   move();
   delay(time);
