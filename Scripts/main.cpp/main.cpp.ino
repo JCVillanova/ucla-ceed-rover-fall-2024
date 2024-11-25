@@ -1,5 +1,9 @@
 #include <NewPing.h>
 #include <Wire.h>
+#include <MPU6050_light.h>
+#include <Servo.h>
+
+MPU6050 mpu(Wire);
 
 const int SENSOR_AVERAGE_RANGE = 4;
 
@@ -34,6 +38,10 @@ void (*mode)(); // function pointer to forward or backward movement based on env
 #define MAX_DISTANCE 400
 #define NUM_SONAR 6
 
+// Servo motor
+#define servoPWM 40
+Servo myServo;
+
 NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
   NewPing(sonar1, sonar1, MAX_DISTANCE),
   NewPing(sonar2, sonar2, MAX_DISTANCE),
@@ -49,6 +57,21 @@ int distance[NUM_SONAR]; // distance array for each sensor
 void setup() {
   // Serial port begin
   Serial.begin(9600);
+
+  Wire.begin();
+  
+  byte status = mpu.begin();
+  Serial.print(F("MPU6050 status: "));
+  Serial.println(status);
+  while(status!=0){ } // stop everything if could not connect to MPU6050
+  
+  Serial.println(F("Calculating offsets, do not move MPU6050"));
+  delay(1000);
+  // mpu.upsideDownMounting = true; // uncomment this line if the MPU6050 is mounted upside-down
+  mpu.calcOffsets(); // gyro and accelero
+  Serial.println("Done!\n");
+
+  myServo.attach(servoPWM);
 
   // Configure Motor 1 pins as outputs
   pinMode(leftFront_enB, OUTPUT);
@@ -85,6 +108,17 @@ void loop() {
     }
     sensorsSetUp = true;
   }
+
+  mpu.update();
+  Serial.print("Z : ");
+  Serial.println(mpu.getAngleZ());
+
+  myServo.write(0);
+  delay(300);
+  myServo.write(180);
+  delay(300);
+  myServo.detach();
+  myServo.attach(servoPWM);
 
   delay(40);
   updateSonar(sensorData);
