@@ -125,14 +125,14 @@ void loop() {
   delay(40);
   updateSonar(sensorData);
 
-  if(distance[3] + distance[4] > 120) {
+  if(distance[3] + distance[4] > 150) {
     inSearchArea = true;
   }
 
   if(inSearchArea && !objectPickedUp) {
     for(int i = 0; i < 4; ++i) updateSonar(sensorData);
     while(distance[6] > 165) {
-      if(distance[3] + distance[4] < 120) inSearchArea = false;
+      if(distance[3] + distance[4] < 150) inSearchArea = false;
       break;
       rotateLeft();
     }
