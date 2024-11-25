@@ -125,7 +125,9 @@ void loop() {
   delay(40);
   updateSonar(sensorData);
 
-  if(distance[3] + distance[4] > 120) inSearchArea = true;
+  if(distance[3] + distance[4] > 120) {
+    inSearchArea = true;
+  } else inSearchArea = false;
 
   if(inSearchArea && !objectPickedUp) {
     while(distance[6] > 165) {
