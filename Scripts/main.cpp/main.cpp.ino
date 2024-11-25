@@ -127,13 +127,17 @@ void loop() {
 
   if(distance[3] + distance[4] > 150) {
     inSearchArea = true;
+    Serial.println("Rover is in the search area");
   }
 
   if(inSearchArea && !objectPickedUp) {
     for(int i = 0; i < 4; ++i) updateSonar(sensorData);
     while(distance[6] > 165) {
-      if(distance[3] + distance[4] < 150) inSearchArea = false;
-      break;
+      if(distance[3] + distance[4] < 150) {
+        inSearchArea = false;
+        Serial.println("Rover is not in the search area");
+        break;
+      }
       rotateLeft();
     }
     if(distance[6] >= 30) {
@@ -144,6 +148,7 @@ void loop() {
     myServo.detach();
     myServo.attach(servoPWM);
     objectPickedUp = true;
+    Serial.println("Object was picked up");
   } else if(inSearchArea && objectPickedUp) {
     while(mpu.getAngleZ() - 90 < 5 || mpu.getAngleZ() - 90 > -5) {
       rotateLeft();
@@ -156,6 +161,7 @@ void loop() {
       delay(500);
       myServo.detach();
       myServo.attach(servoPWM);
+      Serial.println("Object was dropped in the drop zone");
       while(1);
     }
   } else {
