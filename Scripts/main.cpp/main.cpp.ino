@@ -127,7 +127,7 @@ void loop() {
 
   if(distance[3] + distance[4] > 150) {
     inSearchArea = true;
-    Serial.println("Rover is in the search area");
+    Serial.println("Rover is in the search area because:\nLeft sensor distance: " + distance[3] + "cm\nRight sensor distance: " + distance[4] + "cm\nLeft + Right = " + (distance[3] + distance[4]) + "cm > 150cm");
   }
 
   if(inSearchArea && !objectPickedUp) {
@@ -135,7 +135,7 @@ void loop() {
     while(distance[6] > 165) {
       if(distance[3] + distance[4] < 150) {
         inSearchArea = false;
-        Serial.println("Rover is not in the search area");
+        Serial.println("Rover is in the search area because:\nLeft sensor distance: " + distance[3] + "cm\nRight sensor distance: " + distance[4] + "cm\nLeft + Right = " + (distance[3] + distance[4]) + "cm < 150cm");
         break;
       }
       rotateLeft();
@@ -150,13 +150,16 @@ void loop() {
     objectPickedUp = true;
     Serial.println("Object was picked up");
   } else if(inSearchArea && objectPickedUp) {
-    while(mpu.getAngleZ() - 90 < 5 || mpu.getAngleZ() - 90 > -5) {
+    while(mpu.getAngleZ() - 90 > 5 || mpu.getAngleZ() - 90 < -5) {
       rotateLeft();
       mpu.update();
+      if(mpu.getAngleZ() - 90 <= 5 || mpu.getAngleZ() - 90 >= -5) Serial.println("Rotation toward drop zone finished");
     }
+    
     if(distance[5] > 75) {
       goBackward();
     } else {
+      Serial.println("Rover is in the drop zone");
       myServo.write(180);
       delay(500);
       myServo.detach();
