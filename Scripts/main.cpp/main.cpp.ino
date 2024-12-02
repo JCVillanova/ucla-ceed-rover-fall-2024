@@ -11,6 +11,8 @@ int speed = 255;
 bool sensorsSetUp = false;
 bool inSearchArea = false;
 bool objectPickedUp = false;
+bool leftDidNotWork = false;
+bool obstacleFound = false;
 double sensorData[6][SENSOR_AVERAGE_RANGE]; // 2D array to store sensor data values for each of 6 sensors
 void (*mode)(); // function pointer to forward or backward movement based on environment rover detects
 
@@ -125,38 +127,37 @@ void loop() {
   delay(40);
   updateSonar(sensorData);
 
-  if(distance[3] + distance[4] > 150) {
+  if(distance[2] + distance[3] > 150) {
     inSearchArea = true;
-    Serial.println("Rover is in the search area because:\nLeft sensor distance: " + distance[3] + "cm\nRight sensor distance: " + distance[4] + "cm\nLeft + Right = " + (distance[3] + distance[4]) + "cm > 150cm");
   }
 
   if(inSearchArea && !objectPickedUp) {
     for(int i = 0; i < 4; ++i) updateSonar(sensorData);
-    while(distance[6] > 165) {
-      if(distance[3] + distance[4] < 150) {
+    while(distance[5] > 165) {
+      if(distance[2] + distance[3] < 150) {
         inSearchArea = false;
-        Serial.println("Rover is in the search area because:\nLeft sensor distance: " + distance[3] + "cm\nRight sensor distance: " + distance[4] + "cm\nLeft + Right = " + (distance[3] + distance[4]) + "cm < 150cm");
         break;
       }
-      rotateLeft();
+      rotateLeft(0.5);
     }
-    if(distance[6] >= 30) {
+    if(distance[5] >= 5) {
       goBackward();
+    } else {
+      myServo.write(0);
+      delay(500);
+      myServo.detach();
+      myServo.attach(servoPWM);
+      objectPickedUp = true;
+      Serial.println("Object was picked up");
     }
-    myServo.write(0);
-    delay(500);
-    myServo.detach();
-    myServo.attach(servoPWM);
-    objectPickedUp = true;
-    Serial.println("Object was picked up");
   } else if(inSearchArea && objectPickedUp) {
     while(mpu.getAngleZ() - 90 > 5 || mpu.getAngleZ() - 90 < -5) {
-      rotateLeft();
+      rotateLeft(0.5);
       mpu.update();
       if(mpu.getAngleZ() - 90 <= 5 || mpu.getAngleZ() - 90 >= -5) Serial.println("Rotation toward drop zone finished");
     }
     
-    if(distance[5] > 75) {
+    if(distance[4] > 75) {
       goBackward();
     } else {
       Serial.println("Rover is in the drop zone");
@@ -169,12 +170,32 @@ void loop() {
     }
   } else {
       if((mode == &goForward && frontDistance() <= 40) || (mode == &goBackward && distance[4] <= 40)) {
-        if(distance[2] >= distance[3] && distance[2] >= 25) goLeft();
-        else if(distance[3] >= 25) goRight();
+        if(distance[2] >= 25 && !leftDidNotWork) {
+          obstacleFound = true;
+          goLeft();
+        }
+        else if(distance[3] >= 25) {
+          leftDidNotWork = true;
+          goRight();
+        }
         else if(mode == &goForward) switchMode(&goBackward);
         else switchMode(&goForward);
       } else if (mode == &goBackward && frontDistance() >= 100) switchMode(&goForward);
-      else mode();
+      else {
+        if(obstacleFound) {
+          while(mpu.getAngleZ() > 2) {
+            rotateRight(0.2);
+            mpu.update();
+          }
+          while(mpu.getAngleZ() < -2) {
+            rotateLeft(0.2);
+            mpu.update();
+          }
+          obstacleFound = false;
+        }
+        leftDidNotWork = false;
+        mode();
+      }
   }
 }
 
@@ -294,6 +315,23 @@ void goRight() {
   analogWrite(rightBack_enB, 0.5*speed);
 }
 
+// Rotates the rover to the right
+void rotateRight(double rotateSpeed) {
+  digitalWrite(leftFront_in4, LOW);
+  digitalWrite(leftFront_in3, HIGH);
+  digitalWrite(rightFront_in1, HIGH);
+  digitalWrite(rightFront_in2, LOW);
+  digitalWrite(leftBack_in1, LOW);
+  digitalWrite(leftBack_in2, HIGH);
+  digitalWrite(rightBack_in4, HIGH);
+  digitalWrite(rightBack_in3, LOW);
+
+  analogWrite(leftFront_enB, rotateSpeed*speed);
+  analogWrite(rightFront_enA, rotateSpeed*speed);
+  analogWrite(leftBack_enA, rotateSpeed*speed);
+  analogWrite(rightBack_enB, rotateSpeed*speed);
+}
+
 // Right front and left back wheels move forward, left front and right back wheels move backward
 void goLeft() {
   digitalWrite(leftFront_in4, HIGH);
@@ -312,7 +350,7 @@ void goLeft() {
 }
 
 // Rotates the rover to the left
-void rotateLeft() {
+void rotateLeft(double rotateSpeed) {
   digitalWrite(leftFront_in4, HIGH);
   digitalWrite(leftFront_in3, LOW);
   digitalWrite(rightFront_in1, LOW);
@@ -322,10 +360,10 @@ void rotateLeft() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 0.5*speed);
-  analogWrite(rightFront_enA, 0.5*speed);
-  analogWrite(leftBack_enA, 0.5*speed);
-  analogWrite(rightBack_enB, 0.5*speed);
+  analogWrite(leftFront_enB, rotateSpeed*speed);
+  analogWrite(rightFront_enA, rotateSpeed*speed);
+  analogWrite(leftBack_enA, rotateSpeed*speed);
+  analogWrite(rightBack_enB, rotateSpeed*speed);
 }
 
 // Right front and left back wheels move forward 
