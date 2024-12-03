@@ -7,14 +7,14 @@ MPU6050 mpu(Wire);
 
 const int SENSOR_AVERAGE_RANGE = 4;
 
-int speed = 255;
+const int speed = 255;
 bool sensorsSetUp = false;
 bool inSearchArea = false;
 bool objectPickedUp = false;
 bool leftDidNotWork = false;
 bool obstacleFound = false;
+bool extraRotate = false;
 double sensorData[6][SENSOR_AVERAGE_RANGE]; // 2D array to store sensor data values for each of 6 sensors
-void (*mode)(); // function pointer to forward or backward movement based on environment rover detects
 
 // Define wiring pins for Motor 1
 #define leftFront_enB 2
@@ -43,7 +43,7 @@ void (*mode)(); // function pointer to forward or backward movement based on env
 #define NUM_SONAR 6
 
 // Servo motor
-#define servoPWM 15
+#define servoPWM 44
 Servo myServo;
 
 NewPing sonar[NUM_SONAR] = { // array of ultrasonic sensors
@@ -61,6 +61,7 @@ int distance[NUM_SONAR]; // distance array for each sensor
 void setup() {
   // Serial port begin
   Serial.begin(9600);
+  Serial.println("Setup started");
 
   Wire.begin();
   
@@ -74,8 +75,6 @@ void setup() {
   // mpu.upsideDownMounting = true; // uncomment this line if the MPU6050 is mounted upside-down
   mpu.calcOffsets(); // gyro and accelero
   Serial.println("Done!\n");
-
-  myServo.attach(servoPWM);
 
   // Configure Motor 1 pins as outputs
   pinMode(leftFront_enB, OUTPUT);
@@ -93,7 +92,6 @@ void setup() {
   pinMode(rightBack_in4, OUTPUT);
   pinMode(rightBack_in3, OUTPUT);
 
-  switchMode(&goForward);
 }
 
 // loop() method is called repeatedly as long as the program is running
@@ -114,15 +112,6 @@ void loop() {
   }
 
   mpu.update();
-  /*Serial.print("Z : ");
-  Serial.println(mpu.getAngleZ());*/
-
-  /*myServo.write(0);
-  delay(300);
-  myServo.write(180);
-  delay(300);
-  myServo.detach();
-  myServo.attach(servoPWM);*/
 
   delay(40);
   updateSonar(sensorData);
@@ -133,74 +122,76 @@ void loop() {
 
   if(inSearchArea && !objectPickedUp) {
     for(int i = 0; i < 4; ++i) updateSonar(sensorData);
-    while(distance[5] > 165) {
-      if(distance[2] + distance[3] < 150) {
-        inSearchArea = false;
-        break;
-      }
-      rotateLeft(0.5);
+    while(distance[3] > 90) {
+      goForward();
     }
-    if(distance[5] >= 5) {
-      goBackward();
-    } else {
-      myServo.write(0);
-      delay(500);
-      myServo.detach();
-      myServo.attach(servoPWM);
-      objectPickedUp = true;
-      Serial.println("Object was picked up");
-    }
-  } else if(inSearchArea && objectPickedUp) {
-    while(mpu.getAngleZ() - 90 > 5 || mpu.getAngleZ() - 90 < -5) {
-      rotateLeft(0.5);
+    delay(750);
+    stop();
+    while(mpu.getAngleZ() - 85 > 5 || mpu.getAngleZ() - 85 < -5) {
+      rotateLeft(128);
       mpu.update();
-      if(mpu.getAngleZ() - 90 <= 5 || mpu.getAngleZ() - 90 >= -5) Serial.println("Rotation toward drop zone finished");
     }
-    
-    if(distance[4] > 75) {
+    /*if(!extraRotate) {
+      delay(1500);
+      stop();
+      delay(200);
+      extraRotate = true;
+    }*/
+    if(distance[5] >= 8) {
       goBackward();
     } else {
-      Serial.println("Rover is in the drop zone");
-      myServo.write(180);
-      delay(500);
-      myServo.detach();
-      myServo.attach(servoPWM);
-      Serial.println("Object was dropped in the drop zone");
-      while(1);
+      stop();
+      delay(200);
+      updateSonar(sensorData);
+      if(distance[5] <= 5) {
+        myServo.attach(servoPWM);
+        myServo.write(0);
+        delay(1500);
+        objectPickedUp = true;
+        Serial.println("Object was picked up");
+      }
     }
+  } else if(objectPickedUp) {
+    rotateLeft(128);
+    delay(2250);
+    
+    goBackward();
+    delay(8000);
+    stop();
+    while(1);
   } else {
-      if((mode == &goForward && frontDistance() <= 40) || (mode == &goBackward && distance[4] <= 40)) {
-        if(distance[2] >= 25 && !leftDidNotWork) {
+      if(frontDistance() <= 30) {
+        if(distance[2] >= 20 && !leftDidNotWork) {
           obstacleFound = true;
+          Serial.println("Going left");
           goLeft();
+          if(distance[2] <= 20) leftDidNotWork = true;
         }
-        else if(distance[3] >= 25) {
-          leftDidNotWork = true;
+        else {
+          Serial.println("Going right");
           goRight();
         }
-        else if(mode == &goForward) switchMode(&goBackward);
-        else switchMode(&goForward);
-      } else if (mode == &goBackward && frontDistance() >= 100) switchMode(&goForward);
-      else {
+      } else {
         if(obstacleFound) {
-          while(mpu.getAngleZ() > 2) {
-            rotateRight(0.2);
+          stop();
+          delay(100);
+          while(mpu.getAngleZ() > 5) {
+            Serial.println("Realigning right");
+            rotateRight(50);
             mpu.update();
           }
-          while(mpu.getAngleZ() < -2) {
-            rotateLeft(0.2);
+          while(mpu.getAngleZ() < -5) {
+            Serial.println("Realigning left");
+            rotateLeft(50);
             mpu.update();
           }
           obstacleFound = false;
         }
         leftDidNotWork = false;
-        mode();
+        Serial.println("Going forward probably");
+        goForward();
       }
   }
-}
-
-void switchMode(void (*direction)()) {
-  mode = direction;
 }
 
 // Update distance array for all sensors
@@ -292,10 +283,10 @@ void goBackward() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 0.5*speed);
-  analogWrite(rightFront_enA, 0.5*speed);
-  analogWrite(leftBack_enA, 0.5*speed);
-  analogWrite(rightBack_enB, 0.5*speed);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Left front and right back wheels move forward, right front and left back wheels move backward
@@ -309,14 +300,14 @@ void goRight() {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, 0.5*speed);
-  analogWrite(rightFront_enA, 0.5*speed);
-  analogWrite(leftBack_enA, 0.5*speed);
-  analogWrite(rightBack_enB, 0.5*speed);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Rotates the rover to the right
-void rotateRight(double rotateSpeed) {
+void rotateRight(int rotateSpeed) {
   digitalWrite(leftFront_in4, LOW);
   digitalWrite(leftFront_in3, HIGH);
   digitalWrite(rightFront_in1, HIGH);
@@ -326,10 +317,10 @@ void rotateRight(double rotateSpeed) {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, rotateSpeed*speed);
-  analogWrite(rightFront_enA, rotateSpeed*speed);
-  analogWrite(leftBack_enA, rotateSpeed*speed);
-  analogWrite(rightBack_enB, rotateSpeed*speed);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Right front and left back wheels move forward, left front and right back wheels move backward
@@ -343,14 +334,14 @@ void goLeft() {
   digitalWrite(rightBack_in4, HIGH);
   digitalWrite(rightBack_in3, LOW);
 
-  analogWrite(leftFront_enB, 0.5*speed);
-  analogWrite(rightFront_enA, 0.5*speed);
-  analogWrite(leftBack_enA, 0.5*speed);
-  analogWrite(rightBack_enB, 0.5*speed);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Rotates the rover to the left
-void rotateLeft(double rotateSpeed) {
+void rotateLeft(int rotateSpeed) {
   digitalWrite(leftFront_in4, HIGH);
   digitalWrite(leftFront_in3, LOW);
   digitalWrite(rightFront_in1, LOW);
@@ -360,10 +351,10 @@ void rotateLeft(double rotateSpeed) {
   digitalWrite(rightBack_in4, LOW);
   digitalWrite(rightBack_in3, HIGH);
 
-  analogWrite(leftFront_enB, rotateSpeed*speed);
-  analogWrite(rightFront_enA, rotateSpeed*speed);
-  analogWrite(leftBack_enA, rotateSpeed*speed);
-  analogWrite(rightBack_enB, rotateSpeed*speed);
+  analogWrite(leftFront_enB, speed);
+  analogWrite(rightFront_enA, speed);
+  analogWrite(leftBack_enA, speed);
+  analogWrite(rightBack_enB, speed);
 }
 
 // Right front and left back wheels move forward 
